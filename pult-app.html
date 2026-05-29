@@ -1,7 +1,7 @@
 <!DOCTYPE html>
-<!-- saved from url=(0043)https://pabhab.github.io/pult/pult-app.html -->
-<html lang="sr"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-
+<html lang="sr">
+<head>
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Pult</title>
 <style>
@@ -11,8 +11,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:16px;border-radius:12px;border:none;font-size:17px;font-weight:600;cursor:pointer;margin-top:8px}
 .btn-dark{background:#1a1a1a;color:#fff}
 .btn-gray{background:#e5e5e5;color:#333}
-input[type=text]{width:100%;padding:13px;font-size:15px;border:1.5px solid #ddd;border-radius:10px;margin-bottom:10px;outline:none;background:#fafafa;-webkit-appearance:none}
-input:focus{border-color:#1a1a1a;background:#fff}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0}
 .ibox{border-radius:12px;padding:14px;text-align:center}
 .ibox .lbl{font-size:11px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;font-weight:700}
@@ -42,33 +40,39 @@ input:checked+.slider:before{transform:translateX(22px)}
 .stat{background:#f8f8f8;border-radius:12px;padding:14px;text-align:center}
 .stat-num{font-size:28px;font-weight:700}
 .stat-lbl{font-size:11px;color:#888;text-transform:uppercase;letter-spacing:0.4px;margin-top:4px}
-#reader{width:100%;border-radius:12px;overflow:hidden;background:#000;min-height:250px}
-#reader video{width:100%!important;border-radius:12px}
-#reader img{display:none}
-.scan-hint{text-align:center;font-size:13px;color:#888;margin-top:8px;margin-bottom:4px}
+#qr-video{width:100%;border-radius:12px;background:#000;display:block;max-height:300px;object-fit:cover}
+#qr-canvas{display:none}
+.cam-wrap{position:relative;margin-bottom:8px}
+.qr-frame{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:200px;height:200px;border:3px solid rgba(255,255,255,0.9);border-radius:16px;box-shadow:0 0 0 2000px rgba(0,0,0,0.45);pointer-events:none}
+.scan-hint{text-align:center;font-size:13px;color:#888;margin-bottom:8px}
 .poklon-box{background:#fef9c3;border-radius:10px;padding:12px;text-align:center;font-size:15px;font-weight:600;color:#854d0e;margin-top:10px}
+.loading{text-align:center;padding:20px;color:#888;font-size:15px}
 </style>
 </head>
 <body>
 
-<div id="pane-main" class="">
+<div id="pane-main">
   <div class="card">
     <div class="topbar">
       <div>
         <h1>Pult</h1>
-        <div style="font-size:12px;color:#888;margin-top:2px" id="conn-lbl">Nije učitano — idi u ⚙️</div>
+        <div style="font-size:12px;color:#888;margin-top:2px" id="conn-lbl">Učitavam podatke...</div>
       </div>
       <div class="icon-btns">
-        <button class="icon-btn" onclick="showPane(&#39;stats&#39;)">📊</button>
-        <button class="icon-btn" onclick="showPane(&#39;setup&#39;)">⚙️</button>
+        <button class="icon-btn" onclick="showPane('stats')">📊</button>
+        <button class="icon-btn" onclick="reloadData()">🔄</button>
       </div>
     </div>
   </div>
 
   <div id="cam-card" class="card hidden">
-    <div id="reader"></div>
-    <div class="scan-hint">Postavi QR kod ispred kamere</div>
-    <button class="btn btn-gray" onclick="stopCam()" style="margin-top:4px">✕ Zatvori kameru</button>
+    <div class="cam-wrap">
+      <video id="qr-video" autoplay playsinline muted></video>
+      <div class="qr-frame"></div>
+    </div>
+    <canvas id="qr-canvas"></canvas>
+    <div class="scan-hint">Postavi QR kod unutar okvira</div>
+    <button class="btn btn-gray" onclick="stopCam()">✕ Zatvori kameru</button>
   </div>
 
   <div id="result-card" class="card hidden">
@@ -87,11 +91,11 @@ input:checked+.slider:before{transform:translateX(22px)}
     <div style="margin-top:12px">
       <div class="tog-row">
         <div><div class="tog-lbl">✅ Prisutan/na</div><div class="tog-sub" id="sub-p">Nije označeno</div></div>
-        <label class="toggle"><input type="checkbox" id="tog-p" onchange="mark(&#39;prisutan&#39;)"><span class="slider"></span></label>
+        <label class="toggle"><input type="checkbox" id="tog-p" onchange="mark('prisutan')"><span class="slider"></span></label>
       </div>
       <div class="tog-row">
         <div><div class="tog-lbl">🎁 Preuzeo poklon</div><div class="tog-sub" id="sub-pk">Nije označeno</div></div>
-        <label class="toggle"><input type="checkbox" id="tog-pk" onchange="mark(&#39;poklon&#39;)"><span class="slider"></span></label>
+        <label class="toggle"><input type="checkbox" id="tog-pk" onchange="mark('poklon')"><span class="slider"></span></label>
       </div>
     </div>
     <button class="btn btn-dark" onclick="startCam()" style="margin-top:12px">📷 Sledeći gost</button>
@@ -109,30 +113,9 @@ input:checked+.slider:before{transform:translateX(22px)}
   </div>
 </div>
 
-<div id="pane-setup" class="hidden">
-  <div class="card">
-    <div class="topbar" style="margin-bottom:14px"><h1>Podešavanja</h1><button class="icon-btn" onclick="showPane(&#39;main&#39;)">✕</button></div>
-    <div style="font-size:12px;color:#888;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">CSV link iz Google Sheets</div>
-    <input type="text" id="inp-csv" placeholder="https://docs.google.com/spreadsheets/d/.../pub?..." autocomplete="off" spellcheck="false">
-    <button class="btn btn-dark" onclick="saveLoad()">Učitaj podatke</button>
-    <div id="badge" style="text-align:center;margin-top:10px;font-size:14px;color:#888"></div>
-  </div>
-  <div class="card">
-    <div style="font-size:14px;font-weight:700;margin-bottom:10px">Kako dobiti CSV link:</div>
-    <div style="font-size:13px;color:#555;line-height:2">
-      1. Otvori tabelu u Google Sheets<br>
-      2. <b>File → Share → Publish to web</b><br>
-      3. Levo odaberi <b>PULLT</b> (naziv svog lista)<br>
-      4. Desno odaberi <b>Comma-separated values (.csv)</b><br>
-      5. Klikni <b>Publish</b> → kopiraj link<br>
-      6. Nalepi link gore i klikni Učitaj
-    </div>
-  </div>
-</div>
-
 <div id="pane-stats" class="hidden">
   <div class="card">
-    <div class="topbar" style="margin-bottom:14px"><h1>Statistika</h1><button class="icon-btn" onclick="showPane(&#39;main&#39;)">✕</button></div>
+    <div class="topbar" style="margin-bottom:14px"><h1>Statistika</h1><button class="icon-btn" onclick="showPane('main')">✕</button></div>
     <div class="stat-grid">
       <div class="stat"><div class="stat-num" id="s-uk">0</div><div class="stat-lbl">Ukupno gostiju</div></div>
       <div class="stat"><div class="stat-num" id="s-pr">0</div><div class="stat-lbl">Prisutni</div></div>
@@ -144,12 +127,13 @@ input:checked+.slider:before{transform:translateX(22px)}
   </div>
 </div>
 
-<script src="./12_files/html5-qrcode.min.js.download"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
 <script>
-var db={}, statuses={}, curQr=null, scanner=null;
+var API_URL = "https://script.google.com/macros/s/AKfycbzXK5nYU_9jU_EWLPK3JSbxxV7HNgEEoUNpjrkWbq9UGGpNvO23mrruWwRX_yERfkHDmw/exec";
+var db={}, statuses={}, curQr=null, camStream=null, scanLoop=null;
 
 function showPane(p){
-  ['main','setup','stats'].forEach(function(x){
+  ['main','stats'].forEach(function(x){
     document.getElementById('pane-'+x).classList.toggle('hidden',x!==p);
   });
   if(p==='stats') updateStats();
@@ -161,80 +145,38 @@ function isYes(v){
   return n==='da'||n==='yes'||n==='1'||n==='true'||n==='x';
 }
 
-function parseCSV(text){
-  var lines=text.replace(/\r/g,'').split('\n').filter(function(l){return l.trim();});
-  return lines.map(function(line){
-    var cols=[],cur='',inQ=false;
-    for(var i=0;i<line.length;i++){
-      var ch=line[i];
-      if(ch==='"'){inQ=!inQ;}
-      else if(ch===','&&!inQ){cols.push(cur.trim());cur='';}
-      else cur+=ch;
-    }
-    cols.push(cur.trim());
-    return cols;
-  });
-}
+function reloadData(){ loadData(); }
 
-function saveLoad(){
-  var csv=document.getElementById('inp-csv').value.trim();
-  if(!csv){alert('Unesite CSV link.');return;}
-  localStorage.setItem('csvUrl',csv);
-  loadCSV(csv);
-}
-
-function loadCSV(url){
-  document.getElementById('badge').textContent='Učitavam...';
+function loadData(){
   document.getElementById('conn-lbl').textContent='Učitavam...';
-  
-  // Use no-cors proxy to avoid CORS issues
-  var proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url);
-  
-  fetch(proxyUrl)
-    .then(function(res){
-      if(!res.ok) throw new Error('HTTP '+res.status);
-      return res.text();
-    })
-    .then(function(text){
-      var rows=parseCSV(text);
-      if(rows.length<2) throw new Error('Tabela je prazna');
-      var h=rows[0].map(function(x){return x.toLowerCase().replace(/"/g,'').trim();});
-      function col(n){return h.indexOf(n);}
-      var iId=col('id');
-      var iIme=col('ime');
-      var iPre=col('prezime');
-      var iFir=col('firma');
-      var iVec=col('večera')>=0?col('večera'):col('vecera');
-      var iEks=col('ekskurzija');
-      var iPok=col('poklon');
+  fetch(API_URL)
+    .then(function(r){ return r.json(); })
+    .then(function(rows){
       db={};
       var cnt=0;
-      for(var i=1;i<rows.length;i++){
-        var r=rows[i];
-        var rid=iId>=0?(r[iId]||'').replace(/"/g,'').trim():'';
-        if(!rid) continue;
+      rows.forEach(function(row){
+        var rid=(row['ID']||row['id']||'').toString().trim();
+        if(!rid) return;
         var e={
-          ime:iIme>=0?(r[iIme]||'').replace(/"/g,'').trim():'',
-          prezime:iPre>=0?(r[iPre]||'').replace(/"/g,'').trim():'',
-          firma:iFir>=0?(r[iFir]||'').replace(/"/g,'').trim():'',
-          vecera:iVec>=0?isYes(r[iVec]):false,
-          ekskurzija:iEks>=0?isYes(r[iEks]):false,
-          poklon:iPok>=0?(r[iPok]||'').replace(/"/g,'').trim():'',
+          ime:(row['Ime']||row['ime']||'').toString().trim(),
+          prezime:(row['Prezime']||row['prezime']||'').toString().trim(),
+          firma:(row['Firma']||row['firma']||'').toString().trim(),
+          vecera:isYes(row['Večera']||row['Vecera']||row['večera']||row['vecera']),
+          ekskurzija:isYes(row['Ekskurzija']||row['ekskurzija']),
+          poklon:(row['Poklon']||row['poklon']||'').toString().trim(),
           id:rid
         };
         db[rid]=e;
         db[rid.toLowerCase()]=e;
         db[rid.toUpperCase()]=e;
         cnt++;
-      }
+      });
       var sv=localStorage.getItem('statuses');
       if(sv) statuses=JSON.parse(sv);
-      document.getElementById('badge').innerHTML='<span style="color:#15803d;font-weight:600">✓ Učitano '+cnt+' gostiju</span>';
-      document.getElementById('conn-lbl').textContent=cnt+' gostiju učitano';
+      document.getElementById('conn-lbl').textContent=cnt+' gostiju učitano ✓';
     })
     .catch(function(e){
-      document.getElementById('badge').innerHTML='<span style="color:#b91c1c">✗ Greška: '+e.message+'</span>';
-      document.getElementById('conn-lbl').textContent='Greška';
+      document.getElementById('conn-lbl').textContent='Greška: '+e.message;
     });
 }
 
@@ -244,45 +186,41 @@ function startCam(){
   document.getElementById('not-found').classList.add('hidden');
   document.getElementById('cam-card').classList.remove('hidden');
 
-  if(scanner){
-    try{scanner.clear();}catch(e){}
-    scanner=null;
-  }
-
-  scanner = new Html5Qrcode("reader");
-  var config={
-    fps:10,
-    qrbox:{width:250,height:250},
-    aspectRatio:1.0,
-    supportedScanTypes:[Html5QrcodeScanType.SCAN_TYPE_CAMERA]
-  };
-
-  scanner.start(
-    {facingMode:"environment"},
-    config,
-    function(decodedText){
-      stopCam();
-      processCode(decodedText.trim());
-    },
-    function(err){}
-  ).catch(function(e){
+  navigator.mediaDevices.getUserMedia({
+    video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}}
+  }).then(function(stream){
+    camStream=stream;
+    var v=document.getElementById('qr-video');
+    v.srcObject=stream;
+    v.play();
+    setTimeout(function(){ scanLoop=setInterval(scanFrame,150); },500);
+  }).catch(function(e){
     stopCam();
-    alert('Kamera nije dostupna.\n\n'+e);
+    alert('Kamera nije dostupna: '+e.message);
   });
 }
 
 function stopCam(){
-  if(scanner){
-    scanner.stop().then(function(){
-      try{scanner.clear();}catch(e){}
-      scanner=null;
-    }).catch(function(){
-      try{scanner.clear();}catch(e){}
-      scanner=null;
-    });
-  }
+  clearInterval(scanLoop); scanLoop=null;
+  if(camStream){camStream.getTracks().forEach(function(t){t.stop();}); camStream=null;}
   document.getElementById('cam-card').classList.add('hidden');
   document.getElementById('scan-btn-area').classList.remove('hidden');
+}
+
+function scanFrame(){
+  var v=document.getElementById('qr-video');
+  if(!v||v.readyState<2||v.videoWidth===0) return;
+  var c=document.getElementById('qr-canvas');
+  c.width=v.videoWidth; c.height=v.videoHeight;
+  var ctx=c.getContext('2d');
+  ctx.drawImage(v,0,0);
+  var img=ctx.getImageData(0,0,c.width,c.height);
+  if(typeof jsQR==='undefined') return;
+  var code=jsQR(img.data,img.width,img.height,{inversionAttempts:'attemptBoth'});
+  if(code&&code.data&&code.data.trim()){
+    stopCam();
+    processCode(code.data.trim());
+  }
 }
 
 function processCode(code){
@@ -347,8 +285,7 @@ function updateStats(){
   var seen={};
   var guests=Object.values(db).filter(function(g){
     if(seen[g.id]) return false;
-    seen[g.id]=true;
-    return true;
+    seen[g.id]=true; return true;
   });
   document.getElementById('s-uk').textContent=guests.length;
   document.getElementById('s-pr').textContent=Object.values(statuses).filter(function(s){return s.prisutan;}).length;
@@ -360,14 +297,7 @@ function updateStats(){
   document.getElementById('s-pne').textContent=Math.max(0,pUk-pDa);
 }
 
-(function init(){
-  var url=localStorage.getItem('csvUrl')||'';
-  if(url){document.getElementById('inp-csv').value=url;loadCSV(url);}
-  var sv=localStorage.getItem('statuses');
-  if(sv) statuses=JSON.parse(sv);
-})();
+loadData();
 </script>
-
-
-
-</body></html>
+</body>
+</html>
