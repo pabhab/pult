@@ -45,8 +45,37 @@ input:checked+.slider:before{transform:translateX(22px)}
 .cam-wrap{position:relative;margin-bottom:8px}
 .qr-frame{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:220px;height:220px;border:3px solid #22c55e;border-radius:16px;box-shadow:0 0 0 2000px rgba(0,0,0,0.55);pointer-events:none}
 .scan-hint{text-align:center;font-size:13px;color:#888;margin-bottom:8px}
-.poklon-box{background:#fef9c3;border-radius:10px;padding:12px;text-align:center;font-size:15px;font-weight:600;color:#854d0e;margin-top:10px;border:1px solid #fef08a}
 .note-box{font-size:12px;color:#666;background:#f8f8f8;padding:8px;border-radius:8px;margin-top:8px}
+
+/* NOVI KREATIVNI VIZUELNI BOKSOVI ZA PROMO PAKETE */
+.pak-da {
+  background: #22c55e;
+  color: #fff;
+  border-radius: 12px;
+  padding: 16px;
+  text-align: center;
+  font-size: 18px;
+  font-weight: 800;
+  margin-top: 12px;
+  border: 2px solid #16a34a;
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+  animation: pulsiraj 1.5s infinite alternate;
+}
+.pak-ne {
+  background: #f3f4f6;
+  color: #9ca3af;
+  border-radius: 12px;
+  padding: 10px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 600;
+  margin-top: 12px;
+  border: 1px dashed #d1d5db;
+}
+@keyframes pulsiraj {
+  0% { transform: scale(1); }
+  100% { transform: scale(1.02); }
+}
 </style>
 </head>
 <body>
@@ -88,7 +117,7 @@ input:checked+.slider:before{transform:translateX(22px)}
       <div class="ibox" id="beks"><div class="lbl">🚌 Ekskurzija</div><div class="val" id="veks">—</div></div>
     </div>
     
-    <div id="poklon-box" class="poklon-box hidden"></div>
+    <div id="poklon-box"></div>
     
     <div id="note-box" class="note-box hidden"></div>
     
@@ -143,13 +172,11 @@ function showPane(p){
   if(p==='stats') updateStats();
 }
 
-// NOVA POBOLJŠANA I FLEKSIBILNIJA FUNKCIJA ZA PROVERU "DA" VREDNOSTI
 function isYes(v){
   if(v === undefined || v === null) return false;
   if(typeof v === 'boolean') return v;
   var n = v.toString().trim().toLowerCase();
   if(n === '' || n === 'ne' || n === 'no' || n === 'false' || n === '0') return false;
-  // Ako piše Da, Yes, TRUE, X ili bilo koja reč koja označava potvrdan unos (npr. "Uplaćeno")
   return true;
 }
 
@@ -167,7 +194,6 @@ function loadData(){
         var rid=(row['ID']||'').toString().trim();
         if(!rid) return;
         
-        // Hvatanje tačne kolone za večeru bez obzira na varijacije u API-ju
         var proveraVecera = row['VEČ.'] !== undefined ? row['VEČ.'] : (row['VEC.'] !== undefined ? row['VEC.'] : row['VEČERA']);
         var proveraEksk = row['EKSK.'] !== undefined ? row['EKSK.'] : row['EKSKURZIJA'];
 
@@ -178,8 +204,6 @@ function loadData(){
           vecera:isYes(proveraVecera),
           ekskurzija:isYes(proveraEksk),
           materijal:(row['MATERIJAL']||'').toString().trim(),
-          napomenaReg:(row['NOTE- REGISTRACIJA']||'').toString().trim(),
-          napomenaNap:(row['NOTE- NAPLATE']||'').toString().trim(),
           id:rid
         };
         db[rid]=e;
@@ -281,28 +305,14 @@ function showResult(qr,g){
   setBox('vec',g.vecera);
   setBox('eks',g.ekskurzija);
   
-  var pb=document.getElementById('poklon-box');
-  if(g.materijal && g.materijal !== '' && g.materijal.toLowerCase() !== 'ne'){
-    pb.classList.remove('hidden');
-    if(g.materijal.toLowerCase() === 'da' || g.materijal === '1') {
-      pb.textContent = '🎁 IMA PRAVO NA PROMO PAKET';
-    } else {
-      pb.textContent = '🎁 Promo paket: ' + g.materijal;
-    }
+  // DRASIČNA VIZUELNA RAZLIKA ZA PROMO PAKETE
+  var pb = document.getElementById('poklon-box');
+  if(isYes(g.materijal)){
+    pb.className = 'pak-da';
+    pb.innerHTML = '🎁 URUČITI PROMO PAKET!';
   } else {
-    pb.classList.add('hidden');
-  }
-  
-  var nb=document.getElementById('note-box');
-  var tekstNapomene = '';
-  if(g.napomenaReg) tekstNapomene += '📝 Reg: ' + g.napomenaReg + ' ';
-  if(g.napomenaNap) tekstNapomene += '💰 Naplata: ' + g.napomenaNap;
-  
-  if(tekstNapomene.trim() !== '') {
-    nb.classList.remove('hidden');
-    nb.textContent = tekstNapomene;
-  } else {
-    nb.classList.add('hidden');
+    pb.className = 'pak-ne';
+    pb.innerHTML = '🛑 Ne davati paket';
   }
   
   var st=statuses[qr]||{};
@@ -370,16 +380,20 @@ function updateStats(){
     seen[g.id]=true; return true;
   });
   
+  // Računamo samo one koji stvarno imaju "Da" za promo paket
+  var ukupnoKojiImajuPravoNaPaket = guests.filter(function(g){ return g.materijal && isYes(g.materijal); }).length;
+  
+  // Brojimo koliko njih je do sada preuzelo paket
+  var paketiUruconi = Object.values(statuses).filter(function(s){ return s.paket_preuzet; }).length;
+  
   document.getElementById('s-uk').textContent=guests.length;
   document.getElementById('s-pr').textContent=Object.values(statuses).filter(function(s){return s.prisustvo;}).length;
   document.getElementById('s-vec').textContent=guests.filter(function(g){return g.vecera;}).length;
   document.getElementById('s-eks').textContent=guests.filter(function(g){return g.ekskurzija;}).length;
   
-  var pDa=Object.values(statuses).filter(function(s){return s.paket_preuzet;}).length;
-  var pUk=guests.filter(function(g){return g.materijal && g.materijal!=='' && g.materijal.toLowerCase()!=='ne';}).length;
-  
-  document.getElementById('s-pda').textContent=pDa;
-  document.getElementById('s-pne').textContent=Math.max(0, pUk - pDa);
+  document.getElementById('s-pda').textContent=paketiUruconi;
+  // Preostali paketi = Ukupno onih koji imaju pravo - oni koji su već preuzeli
+  document.getElementById('s-pne').textContent=Math.max(0, ukupnoKojiImajuPravoNaPaket - paketiUruconi);
 }
 
 loadData();
