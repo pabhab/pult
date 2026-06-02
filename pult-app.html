@@ -180,11 +180,9 @@ function isYes(v){
   return true;
 }
 
-// STRIKTNA PROVERA KOJA REŠAVA VELIKO "D" I SLOVO "a"
 function isRealPackage(v) {
   if(!v) return false;
   var n = v.toString().trim();
-  // Odobri paket samo i isključivo ako piše tačno "Da" ili "DA"
   return (n === 'Da' || n === 'DA' || n === 'da');
 }
 
@@ -343,6 +341,15 @@ function mark(key){
   var subId = isPrisustvo ? 'sub-p' : 'sub-pk';
   
   var checked = document.getElementById(togId).checked;
+  
+  // SIGURNOSNO UPOZORENJE ZA INCIDENT
+  if(!isPrisustvo && checked) {
+    var g = db[curQr] || db[curQr.toLowerCase()] || db[curQr.toUpperCase()];
+    if(g && !isRealPackage(g.materijal)) {
+      alert("⚠️ ŠTO ĆE NAMA OVAJ INCIDENT?! Ovaj korisnik ne bi trebalo da dobije paket");
+    }
+  }
+
   var now = new Date().toLocaleTimeString('sr',{hour:'2-digit',minute:'2-digit'});
   
   statuses[curQr][key] = checked;
