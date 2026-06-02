@@ -45,7 +45,8 @@ input:checked+.slider:before{transform:translateX(22px)}
 .cam-wrap{position:relative;margin-bottom:8px}
 .qr-frame{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:220px;height:220px;border:3px solid #22c55e;border-radius:16px;box-shadow:0 0 0 2000px rgba(0,0,0,0.55);pointer-events:none}
 .scan-hint{text-align:center;font-size:13px;color:#888;margin-bottom:8px}
-.poklon-box{background:#fef9c3;border-radius:10px;padding:12px;text-align:center;font-size:15px;font-weight:600;color:#854d0e;margin-top:10px}
+.poklon-box{background:#fef9c3;border-radius:10px;padding:12px;text-align:center;font-size:15px;font-weight:600;color:#854d0e;margin-top:10px;border:1px solid #fef08a}
+.note-box{font-size:12px;color:#666;background:#f8f8f8;padding:8px;border-radius:8px;margin-top:8px}
 </style>
 </head>
 <body>
@@ -86,15 +87,19 @@ input:checked+.slider:before{transform:translateX(22px)}
       <div class="ibox" id="bvec"><div class="lbl">🍽 Večera</div><div class="val" id="vvec">—</div></div>
       <div class="ibox" id="beks"><div class="lbl">🚌 Ekskurzija</div><div class="val" id="veks">—</div></div>
     </div>
+    
     <div id="poklon-box" class="poklon-box hidden"></div>
+    
+    <div id="note-box" class="note-box hidden"></div>
+    
     <div style="margin-top:12px">
       <div class="tog-row">
-        <div><div class="tog-lbl">✅ Prisutan/na</div><div class="tog-sub" id="sub-p">Nije označeno</div></div>
-        <label class="toggle"><input type="checkbox" id="tog-p" onchange="mark('prisutan')"><span class="slider"></span></label>
+        <div><div class="tog-lbl">✅ Prisustvo potvrđeno</div><div class="tog-sub" id="sub-p">Nije označeno</div></div>
+        <label class="toggle"><input type="checkbox" id="tog-p" onchange="mark('prisustvo')"><span class="slider"></span></label>
       </div>
       <div class="tog-row">
-        <div><div class="tog-lbl">🎁 Preuzeo poklon</div><div class="tog-sub" id="sub-pk">Nije označeno</div></div>
-        <label class="toggle"><input type="checkbox" id="tog-pk" onchange="mark('poklon')"><span class="slider"></span></label>
+        <div><div class="tog-lbl">🎁 Paket preuzet</div><div class="tog-sub" id="sub-pk">Nije označeno</div></div>
+        <label class="toggle"><input type="checkbox" id="tog-pk" onchange="mark('paket_preuzet')"><span class="slider"></span></label>
       </div>
     </div>
     <button class="btn btn-dark" onclick="startCam()" style="margin-top:12px">📷 Sledeći gost</button>
@@ -117,11 +122,11 @@ input:checked+.slider:before{transform:translateX(22px)}
     <div class="topbar" style="margin-bottom:14px"><h1>Statistika</h1><button class="icon-btn" onclick="showPane('main')">✕</button></div>
     <div class="stat-grid">
       <div class="stat"><div class="stat-num" id="s-uk">0</div><div class="stat-lbl">Ukupno gostiju</div></div>
-      <div class="stat"><div class="stat-num" id="s-pr">0</div><div class="stat-lbl">Prisutni</div></div>
+      <div class="stat"><div class="stat-num" id="s-pr">0</div><div class="stat-lbl">Prisustvo potvrđeno</div></div>
       <div class="stat"><div class="stat-num" id="s-vec">0</div><div class="stat-lbl">Večera plaćena</div></div>
       <div class="stat"><div class="stat-num" id="s-eks">0</div><div class="stat-lbl">Ekskurzija</div></div>
-      <div class="stat"><div class="stat-num" id="s-pda">0</div><div class="stat-lbl">Pokloni preuzeti</div></div>
-      <div class="stat"><div class="stat-num" id="s-pne">0</div><div class="stat-lbl">Pokloni ostali</div></div>
+      <div class="stat"><div class="stat-num" id="s-pda">0</div><div class="stat-lbl">Paketi uručeni</div></div>
+      <div class="stat"><div class="stat-num" id="s-pne">0</div><div class="stat-lbl">Paketi ostali</div></div>
     </div>
   </div>
 </div>
@@ -155,30 +160,32 @@ function loadData(){
       statuses={};
       var cnt=0;
       rows.forEach(function(row){
-        var rid=(row['ID']||row['id']||'').toString().trim();
+        var rid=(row['ID']||'').toString().trim();
         if(!rid) return;
         var e={
-          ime:(row['IME']||row['Ime']||row['ime']||'').toString().trim(),
-          prezime:(row['PREZIME']||row['Prezime']||row['prezime']||'').toString().trim(),
-          afilijacija:(row['AFILIJACIJA']||row['Afilijacija']||row['afilijacija']||'').toString().trim(),
-          vecera:isYes(row['VEČERA']||row['VEČER.']||row['Večera']||row['Vecera']),
-          ekskurzija:isYes(row['EKSK.']||row['Ekskurzija']||row['ekskurzija']),
-          poklon:(row['Poklon']||row['poklon']||'').toString().trim(),
+          ime:(row['IME']||'').toString().trim(),
+          prezime:(row['PREZIME']||'').toString().trim(),
+          afilijacija:(row['AFILIJACIJA']||'').toString().trim(),
+          vecera:isYes(row['VEČ.']||row['VEC.']),
+          ekskurzija:isYes(row['EKSK.']),
+          materijal:(row['MATERIJAL']||'').toString().trim(),
+          napomenaReg:(row['NOTE- REGISTRACIJA']||'').toString().trim(),
+          napomenaNap:(row['NOTE- NAPLATE']||'').toString().trim(),
           id:rid
         };
         db[rid]=e;
         db[rid.toLowerCase()]=e;
         db[rid.toUpperCase()]=e;
 
-        var proveraPrisutan = isYes(row['PRISUTAN']||row['Prisutan']||row['prisutan']);
-        var proveraPoklon = isYes(row['POKLON']||row['Poklon']||row['poklon']);
+        var proveraPrisustvo = isYes(row['PRISUSTVO']);
+        var proveraPaket = isYes(row['PAKET PREUZET']);
         
-        if (proveraPrisutan || proveraPoklon) {
+        if (proveraPrisustvo || proveraPaket) {
           statuses[rid] = {
-            prisutan: proveraPrisutan,
-            prisutanT: proveraPrisutan ? "Učitano iz Sheet-a" : null,
-            poklon: proveraPoklon,
-            poklonT: proveraPoklon ? "Učitano iz Sheet-a" : null
+            prisustvo: proveraPrisustvo,
+            prisustvoT: proveraPrisustvo ? "Učitano" : null,
+            paket_preuzet: proveraPaket,
+            paket_preuzetT: proveraPaket ? "Učitano" : null
           };
         }
         cnt++;
@@ -199,52 +206,29 @@ function startCam(){
 
   if(scanLoop) clearInterval(scanLoop);
 
-  // Smanjene idealne dimenzije jer prevelika rezolucija opterećuje procesor telefona i stvara lag
   navigator.mediaDevices.getUserMedia({
-    video:{
-      facingMode:{ideal:'environment'},
-      width:{ideal:1280, max:1920},
-      height:{ideal:720, max:1080}
-    }
+    video:{ facingMode:{ideal:'environment'}, width:{ideal:1280}, height:{ideal:720} }
   }).then(function(stream){
     camStream=stream;
     var v=document.getElementById('qr-video');
     v.srcObject=stream;
     v.setAttribute("playsinline", true); 
     v.play();
-    // Skraćeno vreme čekanja na start petlje i ubrzano izvršavanje na 80ms (munjevito skeniranje)
     setTimeout(function(){ scanLoop=setInterval(scanFrame, 80); }, 200);
   }).catch(function(e){
-    navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}}})
-    .then(function(st){
-       camStream=st;
-       var v=document.getElementById('qr-video');
-       v.srcObject=st; v.play();
-       setTimeout(function(){ scanLoop=setInterval(scanFrame, 100); }, 300);
-    }).catch(function(err){
-       stopCam();
-       alert('Kamera nije dostupna: '+err.message);
-    });
+    stopCam();
+    alert('Kamera nije dostupna: '+e.message);
   });
 }
 
 function stopCam(){
   if(scanLoop) { clearInterval(scanLoop); scanLoop=null; }
-  
   if(camStream){
-    camStream.getTracks().forEach(function(track){ 
-      try { track.stop(); } catch(e){} 
-    }); 
+    camStream.getTracks().forEach(function(track){ try { track.stop(); } catch(e){} }); 
     camStream=null;
   }
-  
   var v=document.getElementById('qr-video');
-  if(v) {
-    v.pause();
-    v.srcObject=null;
-  }
-  
-  // Prisilno i momentalno vraćanje interfejsa na početak bez obzira na sve
+  if(v) { v.pause(); v.srcObject=null; }
   document.getElementById('cam-card').classList.add('hidden');
   document.getElementById('scan-btn-area').classList.remove('hidden');
 }
@@ -263,7 +247,6 @@ function scanFrame(){
   
   var code=jsQR(img.data,img.width,img.height,{inversionAttempts:'attemptBoth'});
   if(code && code.data && code.data.trim()){
-    // KLJUČNO: Prvo gasi kameru da ne zamrzne ekran, pa tek onda procesuiraj kod
     stopCam();
     processCode(code.data.trim());
   }
@@ -280,24 +263,44 @@ function showResult(qr,g){
   document.getElementById('result-card').classList.remove('hidden');
   document.getElementById('not-found').classList.add('hidden');
   document.getElementById('scan-btn-area').classList.add('hidden');
+  
   var init=((g.ime[0]||'')+(g.prezime[0]||'')).toUpperCase()||'?';
   document.getElementById('av').textContent=init;
   document.getElementById('uname').textContent=(g.ime+' '+g.prezime).trim()||'—';
   document.getElementById('uafiliacija').textContent=g.afilijacija || 'Nema afilijacije';
+  
   setBox('vec',g.vecera);
   setBox('eks',g.ekskurzija);
+  
   var pb=document.getElementById('poklon-box');
-  if(g.poklon&&g.poklon!==''){
+  if(g.materijal && g.materijal !== '' && g.materijal.toLowerCase() !== 'ne'){
     pb.classList.remove('hidden');
-    pb.textContent='🎁 Poklon: '+g.poklon;
+    if(g.materijal.toLowerCase() === 'da' || g.materijal === '1') {
+      pb.textContent = '🎁 IMA PRAVO NA PROMO PAKET';
+    } else {
+      pb.textContent = '🎁 Promo paket: ' + g.materijal;
+    }
   } else {
     pb.classList.add('hidden');
   }
+  
+  var nb=document.getElementById('note-box');
+  var tekstNapomene = '';
+  if(g.napomenaReg) tekstNapomene += '📝 Reg: ' + g.napomenaReg + ' ';
+  if(g.napomenaNap) tekstNapomene += '💰 Naplata: ' + g.napomenaNap;
+  
+  if(tekstNapomene.trim() !== '') {
+    nb.classList.remove('hidden');
+    nb.textContent = tekstNapomene;
+  } else {
+    nb.classList.add('hidden');
+  }
+  
   var st=statuses[qr]||{};
-  document.getElementById('tog-p').checked=!!st.prisutan;
-  document.getElementById('tog-pk').checked=!!st.poklon;
-  document.getElementById('sub-p').textContent=st.prisutan?('Označeno u '+(st.prisutanT||'')):'Nije označeno';
-  document.getElementById('sub-pk').textContent=st.poklon?('Označeno u '+(st.poklonT||'')):'Nije označeno';
+  document.getElementById('tog-p').checked=!!st.prisustvo;
+  document.getElementById('tog-pk').checked=!!st.paket_preuzet;
+  document.getElementById('sub-p').textContent=st.prisustvo?('Označeno u '+(st.prisustvoT||'')):'Nije označeno';
+  document.getElementById('sub-pk').textContent=st.paket_preuzet?('Označeno u '+(st.paket_preuzetT||'')):'Nije označeno';
 }
 
 function setBox(key,val){
@@ -309,9 +312,10 @@ function mark(key){
   if(!curQr) return;
   if(!statuses[curQr]) statuses[curQr]={};
   
-  var isP = key==='prisutan';
-  var togId = isP?'tog-p':'tog-pk';
-  var subId = isP?'sub-p':'sub-pk';
+  var isPrisustvo = key === 'prisustvo';
+  var togId = isPrisustvo ? 'tog-p' : 'tog-pk';
+  var subId = isPrisustvo ? 'sub-p' : 'sub-pk';
+  
   var checked = document.getElementById(togId).checked;
   var now = new Date().toLocaleTimeString('sr',{hour:'2-digit',minute:'2-digit'});
   
@@ -320,14 +324,13 @@ function mark(key){
   localStorage.setItem('statuses',JSON.stringify(statuses));
   document.getElementById(subId).textContent = checked?('Označeno u '+now):'Nije označeno';
 
-  var sheetField = isP ? "PRISUTAN" : "POKLON";
-  var sheetValue = checked ? "Da" : "Ne"; 
-
   document.getElementById('conn-lbl').textContent = 'Zapisujem u Excel...';
 
+  var targetField = isPrisustvo ? "PRISUSTVO" : "PAKET PREUZET";
+
   var urlWithParams = API_URL + "?id=" + encodeURIComponent(curQr) + 
-                                "&field=" + encodeURIComponent(sheetField) + 
-                                "&value=" + encodeURIComponent(sheetValue);
+                                "&field=" + encodeURIComponent(targetField) + 
+                                "&value=" + encodeURIComponent(checked ? "Da" : "Ne");
 
   fetch(urlWithParams, { method: 'GET' })
   .then(function(r) { return r.json(); })
@@ -357,14 +360,17 @@ function updateStats(){
     if(seen[g.id]) return false;
     seen[g.id]=true; return true;
   });
+  
   document.getElementById('s-uk').textContent=guests.length;
-  document.getElementById('s-pr').textContent=Object.values(statuses).filter(function(s){return s.prisutan;}).length;
+  document.getElementById('s-pr').textContent=Object.values(statuses).filter(function(s){return s.prisustvo;}).length;
   document.getElementById('s-vec').textContent=guests.filter(function(g){return g.vecera;}).length;
   document.getElementById('s-eks').textContent=guests.filter(function(g){return g.ekskurzija;}).length;
-  var pDa=Object.values(statuses).filter(function(s){return s.poklon;}).length;
-  var pUk=guests.filter(function(g){return g.poklon&&g.poklon!=='';}).length;
+  
+  var pDa=Object.values(statuses).filter(function(s){return s.paket_preuzet;}).length;
+  var pUk=guests.filter(function(g){return g.materijal && g.materijal!=='' && g.materijal.toLowerCase()!=='ne';}).length;
+  
   document.getElementById('s-pda').textContent=pDa;
-  document.getElementById('s-pne').textContent=Math.max(0,pUk-pDa);
+  document.getElementById('s-pne').textContent=Math.max(0, pUk - pDa);
 }
 
 loadData();
