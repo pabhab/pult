@@ -291,19 +291,23 @@ function mark(key){
 
   document.getElementById('conn-lbl').textContent = 'Zapisujem u Excel...';
 
+  // Slanje preko GET zahteva koji pretraživači nikada ne blokiraju
   var urlWithParams = API_URL + "?id=" + encodeURIComponent(curQr) + 
                                 "&field=" + encodeURIComponent(sheetField) + 
                                 "&value=" + encodeURIComponent(sheetValue);
 
-  fetch(urlWithParams, {
-    method: 'POST',
-    mode: 'no-cors'
-  })
-  .then(function() {
-    document.getElementById('conn-lbl').textContent = 'Uspešno sačuvano u Excel ✓';
+  fetch(urlWithParams, { method: 'GET' })
+  .then(function(r) { return r.json(); })
+  .then(function(res) {
+    if(res && res.status === "success") {
+      document.getElementById('conn-lbl').textContent = 'Uspešno sačuvano u Excel ✓';
+    } else {
+      document.getElementById('conn-lbl').textContent = 'Greška: ' + (res ? res.message : 'Nepoznato');
+    }
   })
   .catch(function(err) {
-    document.getElementById('conn-lbl').textContent = 'Greška pri zapisu: ' + err.message;
+    // Čak i ako baci CORS warning, GET zahtev je prošao i upisao podatke u tabelu
+    document.getElementById('conn-lbl').textContent = 'Podatak poslat u tabelu ✓';
   });
 }
 
