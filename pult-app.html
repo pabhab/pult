@@ -46,7 +46,19 @@ input:checked+.slider:before{transform:translateX(22px)}
 .qr-frame{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:220px;height:220px;border:3px solid #22c55e;border-radius:16px;box-shadow:0 0 0 2000px rgba(0,0,0,0.55);pointer-events:none}
 .scan-hint{text-align:center;font-size:13px;color:#888;margin-bottom:8px}
 
-/* DISKRETNI STILOVI ZA BOKSOVE KOJI NE BODU OČI */
+/* SIVO POLJE ZA NAPOMENE */
+.note-box {
+  font-size: 13px;
+  color: #4b5563;
+  background: #f3f4f6;
+  padding: 12px;
+  border-radius: 10px;
+  margin-top: 12px;
+  border-left: 4px solid #9ca3af;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
 .pak-da {
   background: #f0fdf4;
   color: #16a34a;
@@ -70,7 +82,6 @@ input:checked+.slider:before{transform:translateX(22px)}
   border: 1px solid #e5e7eb;
 }
 
-/* INTERNI PROZOR UPOZORENJA */
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -151,6 +162,8 @@ input:checked+.slider:before{transform:translateX(22px)}
     </div>
     
     <div id="poklon-box"></div>
+    
+    <div id="note-box" class="note-box hidden"></div>
     
     <div style="margin-top:12px">
       <div class="tog-row">
@@ -351,17 +364,29 @@ function showResult(qr,g){
   setBox('eks',g.ekskurzija);
   
   var pb = document.getElementById('poklon-box');
-  if(isRealPackage(g.materijal)){
+  var nb = document.getElementById('note-box');
+  var mat = (g.materijal || '').toString().trim();
+  
+  // Resetuj prikaz napomene
+  nb.classList.add('hidden');
+  nb.innerHTML = '';
+
+  if(isRealPackage(mat)){
     pb.className = 'pak-da';
     pb.innerHTML = '🎁 Uručiti promo paket';
   } else {
     pb.className = 'pak-ne';
-    pb.innerHTML = g.materijal ? g.materijal : 'AKRED.';
+    pb.innerHTML = mat ? mat : 'AKRED.';
+    
+    // LOGIKA ZA NAPOMENE: Ako u koloni piše nešto drugo osim "akred.", prikaži to kao važnu napomenu gredom (npr. note registracija / note naplate)
+    if(mat && mat.toLowerCase() !== 'akred.' && mat.toLowerCase() !== 'akred') {
+      nb.innerHTML = '<strong>Napomena:</strong> ' + mat;
+      nb.classList.remove('hidden');
+    }
   }
   
   var st=statuses[qr]||{};
   
-  // OVDE JE REŠEN PROBLEM: Isključivo postavljamo stanje prekidača bez okidanja mark() funkcije i bez provere uslova za modal!
   document.getElementById('tog-p').checked=!!st.prisustvo;
   document.getElementById('tog-pk').checked=!!st.paket_preuzet;
   
@@ -384,7 +409,6 @@ function mark(key){
   
   var checked = document.getElementById(togId).checked;
   
-  // PROVERA RADI SAVRŠENO: Okida se ISKLJUČIVO kada ti fizički klikneš na prekidač
   if(!isPrisustvo && checked) {
     var g = db[curQr] || db[curQr.toLowerCase()] || db[curQr.toUpperCase()];
     if(g && !isRealPackage(g.materijal)) {
