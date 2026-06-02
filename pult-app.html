@@ -180,11 +180,12 @@ function isYes(v){
   return true;
 }
 
-// Provera da li je u pitanju baš paket (unos mora biti "da")
+// STRIKTNA PROVERA KOJA REŠAVA VELIKO "D" I SLOVO "a"
 function isRealPackage(v) {
   if(!v) return false;
-  var n = v.toString().trim().toLowerCase();
-  return n === 'da' || n === 'yes' || n === 'true' || n === '1';
+  var n = v.toString().trim();
+  // Odobri paket samo i isključivo ako piše tačno "Da" ili "DA"
+  return (n === 'Da' || n === 'DA' || n === 'da');
 }
 
 function reloadData(){ loadData(); }
@@ -312,14 +313,12 @@ function showResult(qr,g){
   setBox('vec',g.vecera);
   setBox('eks',g.ekskurzija);
   
-  // PRECIZNA VIZUELNA RAZLIKA ZASNOVANA NA TVOM UNOSU
   var pb = document.getElementById('poklon-box');
   if(isRealPackage(g.materijal)){
     pb.className = 'pak-da';
     pb.innerHTML = '🎁 URUČITI PROMO PAKET!';
   } else {
     pb.className = 'pak-ne';
-    // Ako polje ima neki tekst (npr. AKRED.), ispiši ga, u suprotnom ostavi generički natpis
     pb.innerHTML = g.materijal ? g.materijal : 'AKRED.';
   }
   
@@ -388,7 +387,6 @@ function updateStats(){
     seen[g.id]=true; return true;
   });
   
-  // Brojimo samo one kojima u tabeli stoji striktno "Da"
   var ukupnoKojiImajuPravoNaPaket = guests.filter(function(g){ return isRealPackage(g.materijal); }).length;
   var paketiUruconi = Object.values(statuses).filter(function(s){ return s.paket_preuzet; }).length;
   
