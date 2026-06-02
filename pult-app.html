@@ -46,7 +46,6 @@ input:checked+.slider:before{transform:translateX(22px)}
 .qr-frame{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:220px;height:220px;border:3px solid #22c55e;border-radius:16px;box-shadow:0 0 0 2000px rgba(0,0,0,0.55);pointer-events:none}
 .scan-hint{text-align:center;font-size:13px;color:#888;margin-bottom:8px}
 .poklon-box{background:#fef9c3;border-radius:10px;padding:12px;text-align:center;font-size:15px;font-weight:600;color:#854d0e;margin-top:10px}
-.loading{text-align:center;padding:20px;color:#888;font-size:15px}
 </style>
 </head>
 <body>
@@ -153,6 +152,7 @@ function loadData(){
     .then(function(r){ return r.json(); })
     .then(function(rows){
       db={};
+      statuses={};
       var cnt=0;
       rows.forEach(function(row){
         var rid=(row['ID']||row['id']||'').toString().trim();
@@ -169,10 +169,21 @@ function loadData(){
         db[rid]=e;
         db[rid.toLowerCase()]=e;
         db[rid.toUpperCase()]=e;
+
+        var proveraPrisutan = isYes(row['PRISUTAN']||row['Prisutan']||row['prisutan']);
+        var proveraPoklon = isYes(row['POKLON']||row['Poklon']||row['poklon']);
+        
+        if (proveraPrisutan || proveraPoklon) {
+          statuses[rid] = {
+            prisutan: proveraPrisutan,
+            prisutanT: proveraPrisutan ? "Učitano iz Sheet-a" : null,
+            poklon: proveraPoklon,
+            poklonT: proveraPoklon ? "Učitano iz Sheet-a" : null
+          };
+        }
         cnt++;
       });
-      var sv = localStorage.getItem('statuses');
-      if(sv) statuses=JSON.parse(sv);
+      localStorage.setItem('statuses', JSON.stringify(statuses));
       document.getElementById('conn-lbl').textContent=cnt+' gostiju učitano ✓';
     })
     .catch(function(e){
@@ -186,25 +197,30 @@ function startCam(){
   document.getElementById('not-found').classList.add('hidden');
   document.getElementById('cam-card').classList.remove('hidden');
 
+  if(scanLoop) clearInterval(scanLoop);
+
+  // Smanjene idealne dimenzije jer prevelika rezolucija opterećuje procesor telefona i stvara lag
   navigator.mediaDevices.getUserMedia({
     video:{
       facingMode:{ideal:'environment'},
-      width:{ideal:1920, max:3840},
-      height:{ideal:1080, max:2160}
+      width:{ideal:1280, max:1920},
+      height:{ideal:720, max:1080}
     }
   }).then(function(stream){
     camStream=stream;
     var v=document.getElementById('qr-video');
     v.srcObject=stream;
+    v.setAttribute("playsinline", true); 
     v.play();
-    setTimeout(function(){ scanLoop=setInterval(scanFrame,100); },300);
+    // Skraćeno vreme čekanja na start petlje i ubrzano izvršavanje na 80ms (munjevito skeniranje)
+    setTimeout(function(){ scanLoop=setInterval(scanFrame, 80); }, 200);
   }).catch(function(e){
     navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}}})
     .then(function(st){
        camStream=st;
        var v=document.getElementById('qr-video');
        v.srcObject=st; v.play();
-       setTimeout(function(){ scanLoop=setInterval(scanFrame,150); },500);
+       setTimeout(function(){ scanLoop=setInterval(scanFrame, 100); }, 300);
     }).catch(function(err){
        stopCam();
        alert('Kamera nije dostupna: '+err.message);
@@ -213,23 +229,41 @@ function startCam(){
 }
 
 function stopCam(){
-  clearInterval(scanLoop); scanLoop=null;
-  if(camStream){camStream.getTracks().forEach(function(t){t.stop();}); camStream=null;}
+  if(scanLoop) { clearInterval(scanLoop); scanLoop=null; }
+  
+  if(camStream){
+    camStream.getTracks().forEach(function(track){ 
+      try { track.stop(); } catch(e){} 
+    }); 
+    camStream=null;
+  }
+  
+  var v=document.getElementById('qr-video');
+  if(v) {
+    v.pause();
+    v.srcObject=null;
+  }
+  
+  // Prisilno i momentalno vraćanje interfejsa na početak bez obzira na sve
   document.getElementById('cam-card').classList.add('hidden');
   document.getElementById('scan-btn-area').classList.remove('hidden');
 }
 
 function scanFrame(){
   var v=document.getElementById('qr-video');
-  if(!v||v.readyState<2||v.videoWidth===0) return;
+  if(!v || v.paused || v.readyState < 2 || v.videoWidth === 0) return;
+  
   var c=document.getElementById('qr-canvas');
   c.width=v.videoWidth; c.height=v.videoHeight;
   var ctx=c.getContext('2d');
   ctx.drawImage(v,0,0);
+  
   var img=ctx.getImageData(0,0,c.width,c.height);
   if(typeof jsQR==='undefined') return;
+  
   var code=jsQR(img.data,img.width,img.height,{inversionAttempts:'attemptBoth'});
-  if(code&&code.data&&code.data.trim()){
+  if(code && code.data && code.data.trim()){
+    // KLJUČNO: Prvo gasi kameru da ne zamrzne ekran, pa tek onda procesuiraj kod
     stopCam();
     processCode(code.data.trim());
   }
@@ -291,7 +325,6 @@ function mark(key){
 
   document.getElementById('conn-lbl').textContent = 'Zapisujem u Excel...';
 
-  // Slanje preko GET zahteva koji pretraživači nikada ne blokiraju
   var urlWithParams = API_URL + "?id=" + encodeURIComponent(curQr) + 
                                 "&field=" + encodeURIComponent(sheetField) + 
                                 "&value=" + encodeURIComponent(sheetValue);
@@ -306,7 +339,6 @@ function mark(key){
     }
   })
   .catch(function(err) {
-    // Čak i ako baci CORS warning, GET zahtev je prošao i upisao podatke u tabelu
     document.getElementById('conn-lbl').textContent = 'Podatak poslat u tabelu ✓';
   });
 }
