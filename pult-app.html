@@ -46,17 +46,23 @@ input:checked+.slider:before{transform:translateX(22px)}
 .qr-frame{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:220px;height:220px;border:3px solid #22c55e;border-radius:16px;box-shadow:0 0 0 2000px rgba(0,0,0,0.55);pointer-events:none}
 .scan-hint{text-align:center;font-size:13px;color:#888;margin-bottom:8px}
 
-/* SIVO POLJE ZA NAPOMENE */
+/* NOVI FORMTIRANI STILOVI ZA NOTE BOKSOVE */
 .note-box {
   font-size: 13px;
-  color: #4b5563;
+  color: #374151;
   background: #f3f4f6;
-  padding: 12px;
+  padding: 10px 12px;
   border-radius: 10px;
-  margin-top: 12px;
+  margin-top: 8px;
   border-left: 4px solid #9ca3af;
   font-weight: 500;
   line-height: 1.4;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.note-box strong {
+  color: #111827;
 }
 
 .pak-da {
@@ -163,7 +169,9 @@ input:checked+.slider:before{transform:translateX(22px)}
     
     <div id="poklon-box"></div>
     
-    <div id="note-box" class="note-box hidden"></div>
+    <!-- ODVOJENI BOKSOVI ZA PROVERU OBE NOTE -->
+    <div id="note-reg-box" class="note-box hidden"></div>
+    <div id="note-nap-box" class="note-box hidden"></div>
     
     <div style="margin-top:12px">
       <div class="tog-row">
@@ -262,6 +270,9 @@ function loadData(){
           vecera:isYes(proveraVecera),
           ekskurzija:isYes(proveraEksk),
           materijal:(row['MATERIJAL']||'').toString().trim(),
+          // EKSPLICITNO ČUPAMO PODATKE IZ NOVIH KOLONA
+          noteRegistracija:(row['NOTE- REGISTRACIJA']||'').toString().trim(),
+          noteNaplate:(row['NOTE- NAPLATE']||'').toString().trim(),
           id:rid
         };
         db[rid]=e;
@@ -364,25 +375,31 @@ function showResult(qr,g){
   setBox('eks',g.ekskurzija);
   
   var pb = document.getElementById('poklon-box');
-  var nb = document.getElementById('note-box');
   var mat = (g.materijal || '').toString().trim();
   
-  // Resetuj prikaz napomene
-  nb.classList.add('hidden');
-  nb.innerHTML = '';
-
   if(isRealPackage(mat)){
     pb.className = 'pak-da';
     pb.innerHTML = '🎁 Uručiti promo paket';
   } else {
     pb.className = 'pak-ne';
     pb.innerHTML = mat ? mat : 'AKRED.';
-    
-    // LOGIKA ZA NAPOMENE: Ako u koloni piše nešto drugo osim "akred.", prikaži to kao važnu napomenu gredom (npr. note registracija / note naplate)
-    if(mat && mat.toLowerCase() !== 'akred.' && mat.toLowerCase() !== 'akred') {
-      nb.innerHTML = '<strong>Napomena:</strong> ' + mat;
-      nb.classList.remove('hidden');
-    }
+  }
+  
+  // LOGIKA ZA ISPIS NOTE POLJA SA TRAŽENIM IKONICAMA
+  var nReg = document.getElementById('note-reg-box');
+  var nNap = document.getElementById('note-nap-box');
+  
+  nReg.classList.add('hidden');
+  nNap.classList.add('hidden');
+  
+  if(g.noteRegistracija) {
+    nReg.innerHTML = '<span>📝</span> <div><strong>Registracija:</strong> ' + g.noteRegistracija + '</div>';
+    nReg.classList.remove('hidden');
+  }
+  
+  if(g.noteNaplate) {
+    nNap.innerHTML = '<span>💰</span> <div><strong>Naplata:</strong> ' + g.noteNaplate + '</div>';
+    nNap.classList.remove('hidden');
   }
   
   var st=statuses[qr]||{};
