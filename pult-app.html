@@ -47,38 +47,72 @@ input:checked+.slider:before{transform:translateX(22px)}
 .scan-hint{text-align:center;font-size:13px;color:#888;margin-bottom:8px}
 .note-box{font-size:12px;color:#666;background:#f8f8f8;padding:8px;border-radius:8px;margin-top:8px}
 
-/* STILOVI ZA BOKSOVE */
+/* NOVI DISKRETNI STILOVI ZA BOKSOVE */
 .pak-da {
-  background: #22c55e;
-  color: #fff;
+  background: #f0fdf4; /* Nežna, pastelna svetlo zelena */
+  color: #16a34a;      /* Prijatna zelena za tekst */
   border-radius: 12px;
-  padding: 16px;
-  text-align: center;
-  font-size: 18px;
-  font-weight: 800;
-  margin-top: 12px;
-  border: 2px solid #16a34a;
-  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
-  animation: pulsiraj 1.5s infinite alternate;
-}
-.pak-ne {
-  background: #f3f4f6;
-  color: #4b5563;
-  border-radius: 12px;
-  padding: 12px;
+  padding: 14px;
   text-align: center;
   font-size: 16px;
   font-weight: 700;
   margin-top: 12px;
-  border: 1px solid #d1d5db;
+  border: 1px solid #bbf7d0; /* Blag zeleni okvir */
 }
-@keyframes pulsiraj {
-  0% { transform: scale(1); }
-  100% { transform: scale(1.02); }
+.pak-ne {
+  background: #f9fafb; /* Veoma svetla neutralna siva */
+  color: #6b7280;      /* Prigušena siva za tekst */
+  border-radius: 12px;
+  padding: 12px;
+  text-align: center;
+  font-size: 15px;
+  font-weight: 600;
+  margin-top: 12px;
+  border: 1px solid #e5e7eb;
+}
+
+/* INTERNI PROZOR UPOZORENJA */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 9999;
+}
+.modal-card {
+  background: #fff;
+  border-radius: 20px;
+  padding: 24px;
+  width: 100%;
+  max-width: 400px;
+  text-align: center;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+}
+.modal-icon {
+  font-size: 50px;
+  margin-bottom: 12px;
+}
+.modal-text {
+  font-size: 18px;
+  font-weight: 700;
+  color: #b91c1c;
+  line-height: 1.4;
+  margin-bottom: 20px;
 }
 </style>
 </head>
 <body>
+
+<div id="incident-modal" class="modal-overlay hidden">
+  <div class="modal-card">
+    <div class="modal-icon">⚠️</div>
+    <div class="modal-text">ŠTO ĆE NAMA OVAJ INCIDENT?!<br><br><span style="font-weight:500; font-size:15px; color:#4b5563;">Ovaj korisnik ne bi trebalo da dobije paket.</span></div>
+    <button class="btn btn-dark" onclick="closeModal()" style="background:#b91c1c;">Razumem</button>
+  </div>
+</div>
 
 <div id="pane-main">
   <div class="card">
@@ -184,6 +218,10 @@ function isRealPackage(v) {
   if(!v) return false;
   var n = v.toString().trim();
   return (n === 'Da' || n === 'DA' || n === 'da');
+}
+
+function closeModal() {
+  document.getElementById('incident-modal').classList.add('hidden');
 }
 
 function reloadData(){ loadData(); }
@@ -314,7 +352,7 @@ function showResult(qr,g){
   var pb = document.getElementById('poklon-box');
   if(isRealPackage(g.materijal)){
     pb.className = 'pak-da';
-    pb.innerHTML = '🎁 URUČITI PROMO PAKET!';
+    pb.innerHTML = '🎁 Uručiti promo paket';
   } else {
     pb.className = 'pak-ne';
     pb.innerHTML = g.materijal ? g.materijal : 'AKRED.';
@@ -342,11 +380,10 @@ function mark(key){
   
   var checked = document.getElementById(togId).checked;
   
-  // SIGURNOSNO UPOZORENJE ZA INCIDENT
   if(!isPrisustvo && checked) {
     var g = db[curQr] || db[curQr.toLowerCase()] || db[curQr.toUpperCase()];
     if(g && !isRealPackage(g.materijal)) {
-      alert("⚠️ ŠTO ĆE NAMA OVAJ INCIDENT?! Ovaj korisnik ne bi trebalo da dobije paket");
+      document.getElementById('incident-modal').classList.remove('hidden');
     }
   }
 
