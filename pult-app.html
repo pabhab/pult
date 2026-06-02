@@ -31,7 +31,7 @@ input:checked+.slider:before{transform:translateX(22px)}
 .urow{display:flex;align-items:center;gap:14px;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid #f0f0f0}
 .uname{font-size:20px;font-weight:700}
 .uafiliacija{font-size:14px;color:#555;margin-top:4px;font-weight: 500}
-.hidden{display:none}
+.hidden{display:none !important}
 .topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
 .topbar h1{font-size:20px;font-weight:700}
 .icon-btn{width:40px;height:40px;border-radius:10px;border:1px solid #e5e5e5;background:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center}
@@ -45,23 +45,22 @@ input:checked+.slider:before{transform:translateX(22px)}
 .cam-wrap{position:relative;margin-bottom:8px}
 .qr-frame{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:220px;height:220px;border:3px solid #22c55e;border-radius:16px;box-shadow:0 0 0 2000px rgba(0,0,0,0.55);pointer-events:none}
 .scan-hint{text-align:center;font-size:13px;color:#888;margin-bottom:8px}
-.note-box{font-size:12px;color:#666;background:#f8f8f8;padding:8px;border-radius:8px;margin-top:8px}
 
-/* NOVI DISKRETNI STILOVI ZA BOKSOVE */
+/* DISKRETNI STILOVI ZA BOKSOVE KOJI NE BODU OČI */
 .pak-da {
-  background: #f0fdf4; /* Nežna, pastelna svetlo zelena */
-  color: #16a34a;      /* Prijatna zelena za tekst */
+  background: #f0fdf4;
+  color: #16a34a;
   border-radius: 12px;
   padding: 14px;
   text-align: center;
   font-size: 16px;
   font-weight: 700;
   margin-top: 12px;
-  border: 1px solid #bbf7d0; /* Blag zeleni okvir */
+  border: 1px solid #bbf7d0;
 }
 .pak-ne {
-  background: #f9fafb; /* Veoma svetla neutralna siva */
-  color: #6b7280;      /* Prigušena siva za tekst */
+  background: #f9fafb;
+  color: #6b7280;
   border-radius: 12px;
   padding: 12px;
   text-align: center;
@@ -106,7 +105,7 @@ input:checked+.slider:before{transform:translateX(22px)}
 </head>
 <body>
 
-<div id="incident-modal" class="modal-overlay hidden">
+<div id="incident-modal" class="modal-overlay" style="display: none;">
   <div class="modal-card">
     <div class="modal-icon">⚠️</div>
     <div class="modal-text">ŠTO ĆE NAMA OVAJ INCIDENT?!<br><br><span style="font-weight:500; font-size:15px; color:#4b5563;">Ovaj korisnik ne bi trebalo da dobije paket.</span></div>
@@ -152,8 +151,6 @@ input:checked+.slider:before{transform:translateX(22px)}
     </div>
     
     <div id="poklon-box"></div>
-    
-    <div id="note-box" class="note-box hidden"></div>
     
     <div style="margin-top:12px">
       <div class="tog-row">
@@ -220,8 +217,12 @@ function isRealPackage(v) {
   return (n === 'Da' || n === 'DA' || n === 'da');
 }
 
+function openModal() {
+  document.getElementById('incident-modal').style.display = 'flex';
+}
+
 function closeModal() {
-  document.getElementById('incident-modal').classList.add('hidden');
+  document.getElementById('incident-modal').style.display = 'none';
 }
 
 function reloadData(){ loadData(); }
@@ -359,8 +360,11 @@ function showResult(qr,g){
   }
   
   var st=statuses[qr]||{};
+  
+  // OVDE JE REŠEN PROBLEM: Isključivo postavljamo stanje prekidača bez okidanja mark() funkcije i bez provere uslova za modal!
   document.getElementById('tog-p').checked=!!st.prisustvo;
   document.getElementById('tog-pk').checked=!!st.paket_preuzet;
+  
   document.getElementById('sub-p').textContent=st.prisustvo?('Označeno u '+(st.prisustvoT||'')):'Nije označeno';
   document.getElementById('sub-pk').textContent=st.paket_preuzet?('Označeno u '+(st.paket_preuzetT||'')):'Nije označeno';
 }
@@ -380,10 +384,11 @@ function mark(key){
   
   var checked = document.getElementById(togId).checked;
   
+  // PROVERA RADI SAVRŠENO: Okida se ISKLJUČIVO kada ti fizički klikneš na prekidač
   if(!isPrisustvo && checked) {
     var g = db[curQr] || db[curQr.toLowerCase()] || db[curQr.toUpperCase()];
     if(g && !isRealPackage(g.materijal)) {
-      document.getElementById('incident-modal').classList.remove('hidden');
+      openModal();
     }
   }
 
