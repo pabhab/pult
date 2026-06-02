@@ -143,10 +143,14 @@ function showPane(p){
   if(p==='stats') updateStats();
 }
 
+// NOVA POBOLJŠANA I FLEKSIBILNIJA FUNKCIJA ZA PROVERU "DA" VREDNOSTI
 function isYes(v){
-  if(!v) return false;
-  var n=v.toString().trim().toLowerCase();
-  return n==='da'||n==='yes'||n==='1'||n==='true'||n==='x';
+  if(v === undefined || v === null) return false;
+  if(typeof v === 'boolean') return v;
+  var n = v.toString().trim().toLowerCase();
+  if(n === '' || n === 'ne' || n === 'no' || n === 'false' || n === '0') return false;
+  // Ako piše Da, Yes, TRUE, X ili bilo koja reč koja označava potvrdan unos (npr. "Uplaćeno")
+  return true;
 }
 
 function reloadData(){ loadData(); }
@@ -162,12 +166,17 @@ function loadData(){
       rows.forEach(function(row){
         var rid=(row['ID']||'').toString().trim();
         if(!rid) return;
+        
+        // Hvatanje tačne kolone za večeru bez obzira na varijacije u API-ju
+        var proveraVecera = row['VEČ.'] !== undefined ? row['VEČ.'] : (row['VEC.'] !== undefined ? row['VEC.'] : row['VEČERA']);
+        var proveraEksk = row['EKSK.'] !== undefined ? row['EKSK.'] : row['EKSKURZIJA'];
+
         var e={
           ime:(row['IME']||'').toString().trim(),
           prezime:(row['PREZIME']||'').toString().trim(),
           afilijacija:(row['AFILIJACIJA']||'').toString().trim(),
-          vecera:isYes(row['VEČ.']||row['VEC.']),
-          ekskurzija:isYes(row['EKSK.']),
+          vecera:isYes(proveraVecera),
+          ekskurzija:isYes(proveraEksk),
           materijal:(row['MATERIJAL']||'').toString().trim(),
           napomenaReg:(row['NOTE- REGISTRACIJA']||'').toString().trim(),
           napomenaNap:(row['NOTE- NAPLATE']||'').toString().trim(),
