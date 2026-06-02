@@ -45,23 +45,22 @@ input:checked+.slider:before{transform:translateX(22px)}
 .cam-wrap{position:relative;margin-bottom:8px}
 .qr-frame{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:220px;height:220px;border:3px solid #22c55e;border-radius:16px;box-shadow:0 0 0 2000px rgba(0,0,0,0.55);pointer-events:none}
 .scan-hint{text-align:center;font-size:13px;color:#888;margin-bottom:8px}
-.note-box{font-size:12px;color:#666;background:#f8f8f8;padding:8px;border-radius:8px;margin-top:8px}
 
-/* NOVI DISKRETNI STILOVI ZA BOKSOVE */
+/* DISKRETNI STILOVI ZA BOKSOVE KOJI NE BODU OČI */
 .pak-da {
-  background: #f0fdf4; /* Nežna, pastelna svetlo zelena */
-  color: #16a34a;      /* Prijatna zelena za tekst */
+  background: #f0fdf4;
+  color: #16a34a;
   border-radius: 12px;
   padding: 14px;
   text-align: center;
   font-size: 16px;
   font-weight: 700;
   margin-top: 12px;
-  border: 1px solid #bbf7d0; /* Blag zeleni okvir */
+  border: 1px solid #bbf7d0;
 }
 .pak-ne {
-  background: #f9fafb; /* Veoma svetla neutralna siva */
-  color: #6b7280;      /* Prigušena siva za tekst */
+  background: #f9fafb;
+  color: #6b7280;
   border-radius: 12px;
   padding: 12px;
   text-align: center;
@@ -106,6 +105,7 @@ input:checked+.slider:before{transform:translateX(22px)}
 </head>
 <body>
 
+<!-- PROZOR UPOZORENJA (Početno je skriven preko klase 'hidden') -->
 <div id="incident-modal" class="modal-overlay hidden">
   <div class="modal-card">
     <div class="modal-icon">⚠️</div>
@@ -152,8 +152,6 @@ input:checked+.slider:before{transform:translateX(22px)}
     </div>
     
     <div id="poklon-box"></div>
-    
-    <div id="note-box" class="note-box hidden"></div>
     
     <div style="margin-top:12px">
       <div class="tog-row">
@@ -380,6 +378,7 @@ function mark(key){
   
   var checked = document.getElementById(togId).checked;
   
+  // PROVERA SPUŠTENA OVDE: Pali se isključivo kada se klikne na paket za AKRED.
   if(!isPrisustvo && checked) {
     var g = db[curQr] || db[curQr.toLowerCase()] || db[curQr.toUpperCase()];
     if(g && !isRealPackage(g.materijal)) {
