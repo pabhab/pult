@@ -47,7 +47,7 @@ input:checked+.slider:before{transform:translateX(22px)}
 .scan-hint{text-align:center;font-size:13px;color:#888;margin-bottom:8px}
 .note-box{font-size:12px;color:#666;background:#f8f8f8;padding:8px;border-radius:8px;margin-top:8px}
 
-/* NOVI KREATIVNI VIZUELNI BOKSOVI ZA PROMO PAKETE */
+/* STILOVI ZA BOKSOVE */
 .pak-da {
   background: #22c55e;
   color: #fff;
@@ -63,14 +63,14 @@ input:checked+.slider:before{transform:translateX(22px)}
 }
 .pak-ne {
   background: #f3f4f6;
-  color: #9ca3af;
+  color: #4b5563;
   border-radius: 12px;
-  padding: 10px;
+  padding: 12px;
   text-align: center;
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 16px;
+  font-weight: 700;
   margin-top: 12px;
-  border: 1px dashed #d1d5db;
+  border: 1px solid #d1d5db;
 }
 @keyframes pulsiraj {
   0% { transform: scale(1); }
@@ -178,6 +178,13 @@ function isYes(v){
   var n = v.toString().trim().toLowerCase();
   if(n === '' || n === 'ne' || n === 'no' || n === 'false' || n === '0') return false;
   return true;
+}
+
+// Provera da li je u pitanju baš paket (unos mora biti "da")
+function isRealPackage(v) {
+  if(!v) return false;
+  var n = v.toString().trim().toLowerCase();
+  return n === 'da' || n === 'yes' || n === 'true' || n === '1';
 }
 
 function reloadData(){ loadData(); }
@@ -305,14 +312,15 @@ function showResult(qr,g){
   setBox('vec',g.vecera);
   setBox('eks',g.ekskurzija);
   
-  // DRASIČNA VIZUELNA RAZLIKA ZA PROMO PAKETE
+  // PRECIZNA VIZUELNA RAZLIKA ZASNOVANA NA TVOM UNOSU
   var pb = document.getElementById('poklon-box');
-  if(isYes(g.materijal)){
+  if(isRealPackage(g.materijal)){
     pb.className = 'pak-da';
     pb.innerHTML = '🎁 URUČITI PROMO PAKET!';
   } else {
     pb.className = 'pak-ne';
-    pb.innerHTML = '🛑 Ne davati paket';
+    // Ako polje ima neki tekst (npr. AKRED.), ispiši ga, u suprotnom ostavi generički natpis
+    pb.innerHTML = g.materijal ? g.materijal : 'AKRED.';
   }
   
   var st=statuses[qr]||{};
@@ -380,10 +388,8 @@ function updateStats(){
     seen[g.id]=true; return true;
   });
   
-  // Računamo samo one koji stvarno imaju "Da" za promo paket
-  var ukupnoKojiImajuPravoNaPaket = guests.filter(function(g){ return g.materijal && isYes(g.materijal); }).length;
-  
-  // Brojimo koliko njih je do sada preuzelo paket
+  // Brojimo samo one kojima u tabeli stoji striktno "Da"
+  var ukupnoKojiImajuPravoNaPaket = guests.filter(function(g){ return isRealPackage(g.materijal); }).length;
   var paketiUruconi = Object.values(statuses).filter(function(s){ return s.paket_preuzet; }).length;
   
   document.getElementById('s-uk').textContent=guests.length;
@@ -392,7 +398,6 @@ function updateStats(){
   document.getElementById('s-eks').textContent=guests.filter(function(g){return g.ekskurzija;}).length;
   
   document.getElementById('s-pda').textContent=paketiUruconi;
-  // Preostali paketi = Ukupno onih koji imaju pravo - oni koji su već preuzeli
   document.getElementById('s-pne').textContent=Math.max(0, ukupnoKojiImajuPravoNaPaket - paketiUruconi);
 }
 
