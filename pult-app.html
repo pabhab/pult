@@ -30,7 +30,7 @@ input:checked+.slider:before{transform:translateX(22px)}
 .avatar{width:54px;height:54px;border-radius:50%;background:#e0e7ff;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:#4338ca;flex-shrink:0}
 .urow{display:flex;align-items:center;gap:14px;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid #f0f0f0}
 .uname{font-size:20px;font-weight:700}
-.ufirm{font-size:14px;color:#888;margin-top:2px}
+.uafiliacija{font-size:14px;color:#555;margin-top:4px;font-weight: 500}
 .hidden{display:none}
 .topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
 .topbar h1{font-size:20px;font-weight:700}
@@ -80,7 +80,7 @@ input:checked+.slider:before{transform:translateX(22px)}
       <div class="avatar" id="av">??</div>
       <div>
         <div class="uname" id="uname">—</div>
-        <div class="ufirm" id="ufirm">—</div>
+        <div class="uafiliacija" id="uafiliacija">—</div>
       </div>
     </div>
     <div class="row2">
@@ -158,11 +158,11 @@ function loadData(){
         var rid=(row['ID']||row['id']||'').toString().trim();
         if(!rid) return;
         var e={
-          ime:(row['Ime']||row['ime']||'').toString().trim(),
-          prezime:(row['Prezime']||row['prezime']||'').toString().trim(),
-          firma:(row['Firma']||row['firma']||'').toString().trim(),
-          vecera:isYes(row['Večera']||row['Vecera']||row['večera']||row['vecera']),
-          ekskurzija:isYes(row['Ekskurzija']||row['ekskurzija']),
+          ime:(row['IME']||row['Ime']||row['ime']||'').toString().trim(),
+          prezime:(row['PREZIME']||row['Prezime']||row['prezime']||'').toString().trim(),
+          afilijacija:(row['AFILIJACIJA']||row['Afilijacija']||row['afilijacija']||'').toString().trim(),
+          vecera:isYes(row['VEČERA']||row['VEČER.'||row['Večera']||row['Vecera']]),
+          ekskurzija:isYes(row['EKSK.']||row['Ekskurzija']||row['ekskurzija']),
           poklon:(row['Poklon']||row['poklon']||'').toString().trim(),
           id:rid
         };
@@ -237,7 +237,7 @@ function showResult(qr,g){
   var init=((g.ime[0]||'')+(g.prezime[0]||'')).toUpperCase()||'?';
   document.getElementById('av').textContent=init;
   document.getElementById('uname').textContent=(g.ime+' '+g.prezime).trim()||'—';
-  document.getElementById('ufirm').textContent=g.firma||'';
+  document.getElementById('uafiliacija').textContent=g.afijacija || g.afilijacija || 'Nema afilijacije';
   setBox('vec',g.vecera);
   setBox('eks',g.ekskurzija);
   var pb=document.getElementById('poklon-box');
